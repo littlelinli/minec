@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Village + Dragon World</title>
+
+<style>
+body { margin:0; overflow:hidden; font-family:Arial; }
+canvas { display:block; margin:auto; background:#87CEEB; }
+</style>
+</head>
+
+<body>
+
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+canvas.width = 800;
+canvas.height = 450;
+
+// игрок
+let player = {x:400,y:300,r:10};
+
+// дракон (босс)
+let dragon = {x:200,y:120,r:25,hp:10,angle:0};
+
+// пули (атака)
+let bullets = [];
+
+// деревня
+let houses = [
+    {x:100,y:250},
+    {x:180,y:250},
+    {x:260,y:250},
+    {x:340,y:250}
+];
+
+let paths = [
+    {x:80,y:300,w:300,h:10}
+];
+
+// управление
+let keys = {};
+document.addEventListener("keydown", e=>keys[e.key]=true);
+document.addEventListener("keyup", e=>keys[e.key]=false);
+
+// атака
+document.addEventListener("click", ()=>{
+    bullets.push({x:player.x,y:player.y,dx:0,dy:-5});
+});
+
+function update(){
+
+    // движение игрока
+    if(keys["a"]) player.x-=3;
+    if(keys["d"]) player.x+=3;
+    if(keys["w"]) player.y-=3;
+    if(keys["s"]) player.y+=3;
+
+    // дракон летает по кругу
+    dragon.angle += 0.02;
+    dragon.x = 400 + Math.cos(dragon.angle)*150;
+    dragon.y = 120 + Math.sin(dragon.angle)*60;
+
+    // пули
+    bullets.forEach(b=>{
+        b.y += b.dy;
+    });
+
+    // попадание в дракона
+    bullets.forEach((b,i)=>{
+        let dx = b.x - dragon.x;
+        let dy = b.y - dragon.y;
+        let dist = Math.sqrt(dx*dx+dy*dy);
+
+        if(dist < dragon.r){
+            dragon.hp--;
+            bullets.splice(i,1);
+        }
+    });
+
+    bullets = bullets.filter(b=>b.y>0);
+}
+
+function draw(){
+
+    ctx.clearRect(0,0,800,450);
+
+    // небо
+    ctx.fillStyle="#87CEEB";
+    ctx.fillRect(0,0,800,450);
+
+    // земля
+    ctx.fillStyle="#3CB371";
+    ctx.fillRect(0,300,800,150);
+
+    // дороги
+    ctx.fillStyle="#C2B280";
+    paths.forEach(p=>{
+        ctx.fillRect(p.x,p.y,p.w,p.h);
+    });
+
+    // дома (селение)
+    ctx.fillStyle="#8B4513";
+    houses.forEach(h=>{
+        ctx.fillRect(h.x,h.y,40,40);
+    });
+
+    // игрок
+    ctx.fillStyle="blue";
+    ctx.beginPath();
+    ctx.arc(player.x,player.y,player.r,0,Math.PI*2);
+    ctx.fill();
+
+    // дракон
+    ctx.fillStyle="darkviolet";
+    ctx.beginPath();
+    ctx.arc(dragon.x,dragon.y,dragon.r,0,Math.PI*2);
+    ctx.fill();
+
+    // пули
+    ctx.fillStyle="yellow";
+    bullets.forEach(b=>{
+        ctx.beginPath();
+        ctx.arc(b.x,b.y,4,0,Math.PI*2);
+        ctx.fill();
+    });
+
+    // HP дракона
+    ctx.fillStyle="black";
+    ctx.fillText("🐉 HP: " + dragon.hp, 10, 20);
+
+    if(dragon.hp <= 0){
+        ctx.fillStyle="green";
+        ctx.fillText("🏆 ДРАКОН ПОБЕЖДЁН!", 300, 200);
+    }
+}
+
+function loop(){
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+
+</body>
+</html>
